@@ -1,0 +1,162 @@
+# Key Management
+
+Create new keys and load existing keys
+
+## 
+
+### Create new Keys
+
+Given a ``SwiftPQHPKE/CipherSuite`` instance it is possible to generate new ``SwiftPQHPKE/PublicKey``'s and ``SwiftPQHPKE/PrivateKey``'s.
+
+**Example 1**
+
+```swift
+import SwiftPQHPKE
+
+// Generate a random key pair
+
+let theSuite = CipherSuite(kem: .ML512, kdf: .KDF256, aead: .CHACHAPOLY)
+let (pubKey, privKey) = theSuite.makeKeyPair()
+
+// See the key ASN1 structures
+
+print(pubKey)
+print(privKey)
+```
+giving (for example):
+```swift
+Sequence (2):
+  Sequence (1):
+    Object Identifier: 2.16.840.1.101.3.4.4.1
+  Bit String (6400): 01001101 10100011 00001110 ... 6352 more bits ... 11011111 00100110 00100011
+
+Sequence (3):
+  Integer: 0
+  Sequence (1):
+    Object Identifier: 2.16.840.1.101.3.4.4.1
+  Octet String (1636): 04 82 06 60 dd 47 17 59 ... 1620 more bytes ... 97 be 12 9f 27 44 99 c8
+```
+
+**Example 2**
+
+```swift
+import SwiftPQHPKE
+import Digest
+
+// Derive a key pair from keying material
+
+let ikm = Base64.hex2bytes(
+    "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f")!
+
+let theSuite = CipherSuite(kem: .ML512, kdf: .KDF256, aead: .CHACHAPOLY)
+let (pubKey, privKey) = try theSuite.deriveKeyPair(ikm: ikm)
+
+// See the key ASN1 structures
+
+print(pubKey)
+print(privKey)
+```
+giving
+```swift
+Sequence (2):
+  Sequence (1):
+    Object Identifier: 2.16.840.1.101.3.4.4.1
+  Bit String (6400): 00111001 10010101 10000001 ... 6352 more bits ... 01100011 10110010 01101100
+
+Sequence (3):
+  Integer: 0
+  Sequence (1):
+    Object Identifier: 2.16.840.1.101.3.4.4.1
+  Octet String (1636): 04 82 06 60 70 55 4f d4 ... 1620 more bytes ... 38 39 3a 3b 3c 3d 3e 3f
+```
+
+### Load existing Keys
+
+It is possible to load existing keys from their PEM encodings.
+
+**Example**
+
+```swift
+import SwiftPQHPKE
+
+// Public key encoding - ML512
+let pubKeyPem =
+"""
+-----BEGIN PUBLIC KEY-----
+MIIDMjALBglghkgBZQMEBAEDggMhADmVgV5ZfRBDVc8pqlMzyTJRhp1bzb5IcST2Ari2pmwWxHYW
+SK12XPXYAGtRXpBafwrAdrDGLvoygVPnylcBaZ8TBfHmvG+QsOSbaTUSts6ZKouAFt38GmYsfj+W
+GcvYad13GvMIlszVkYrGy3dGbF53mZbWf/mqvJdQPyx7fi0ADYZFD7GAfKTKvaRlgloxx4mht6SR
+qzhydl0yDQtxkg+iE8lAk0Frg7gSTmn2XmLLUADcw3qpoP/3OXDEdy81fSQYnKb1MFVowOI3ajdi
+poxgXlY8XSCVcuD8dTLKKUcpU1VntfxBPF6HktJGRTbMgI+YrddGZPFBVm+QFqkKVBgpqYoEZM5B
+qLtEwtT6PCwglGByjvFKGnxMm5jRIgO0zDUpFgqasteDj3/2tTrgWqMafWRrevpsRZMlJqPDdVYZ
+vplMIRwqMcBbNEeDbLIVC+GCna5rBMVTXP9Ubjkrp5dBFyD5JPSQpaxUlfITVtVQt4KmTBaItrZV
+vMeEIZekNML2Vjtbfwmni8xIgjJ4NWHRb0y6tnVUAAUHgVcMZmBLgXrRJSKUc26LAYYaS1p0UZuL
+b+UUiaUHI5Llh2JscTd2V10zgGocjicyr5fCaA9RZmMxxOuLvAQxxPloMtrxs8RVKPuhU/bHixwZ
+hwKUfM0zdyekb7U7oR3ly0GRNGhZUWy2rXJADzzyCbI2rvNaWArIfrPjD6/WaXPKin3SZ1r0H3oX
+thQzzRr4D3cIhp9mVIhJeYCxrBCgzctjagDthoGzXkKRJMqANQcluF+DperDpKPMFgCQPmUpNWC5
+szblrw1SnawaBIEZMCy3qbzBELlIUb8CEX8ZncSFqFK3Rz8JuDGmgx1bVMC3kNIlz2u5LZRiomzb
+M92lEjx6rw4moLg2Ve6ii/OoB0clAY/WuuS2Ac9huqtxp6PTUZejQ+dLSicsEl1UCJZCbYW3lY07
+OKa6mH7DciXHtEzbEt3kU5tKsII2NoPwS/egnMXEHf6DChsWLgsyQzQ2LwhKFEZ3IzRLrdAA+NjF
+N8SPmY8FMHzr0e3guBw7xZoGWhttY7Js
+-----END PUBLIC KEY-----
+"""
+
+// Private key encoding - ML512
+let privKeyPem =
+"""
+-----BEGIN PRIVATE KEY-----
+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
+OTo7PD0+Pw==
+-----END PRIVATE KEY-----
+"""
+
+let pubKey = try PublicKey(pem: pubKeyPem)
+let privKey = try PrivateKey(pem: privKeyPem)
+
+// See the key ASN1 structures
+
+print(pubKey)
+print(privKey)
+```
+giving:
+```swift
+Sequence (2):
+  Sequence (1):
+    Object Identifier: 2.16.840.1.101.3.4.4.1
+  Bit String (6400): 00111001 10010101 10000001 ... 6352 more bits ... 01100011 10110010 01101100
+
+Sequence (3):
+  Integer: 0
+  Sequence (1):
+    Object Identifier: 2.16.840.1.101.3.4.4.1
+  Octet String (1636): 04 82 06 60 70 55 4f d4 ... 1620 more bytes ... 38 39 3a 3b 3c 3d 3e 3f
+```
+
